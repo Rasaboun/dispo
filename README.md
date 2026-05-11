@@ -4,6 +4,22 @@ CLI to check domain availability without a paid API. RDAP first, WHOIS fallback 
 
 ## Install
 
+### Global CLI (recommended)
+
+```sh
+# from npm (requires Node or Bun)
+npm install -g dispo
+
+# from GitHub directly (requires Bun)
+bun install -g github:Rasaboun/dispo
+```
+
+Then run from anywhere:
+
+```sh
+dispo wishspot.app google.com
+```
+
 ### Standalone binary (no Bun required at runtime)
 
 ```sh
