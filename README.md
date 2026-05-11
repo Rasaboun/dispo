@@ -94,7 +94,7 @@ Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` 
 Install via [skills.sh](https://skills.sh/Rasaboun/dispo) so Claude automatically uses `dispo` when checking domain availability:
 
 ```sh
-bunx skills add Rasaboun/dispo
+bunx skills add Rasaboun/dispo/skills/dispo
 ```
 
 ## Tests
