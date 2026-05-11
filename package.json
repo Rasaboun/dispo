@@ -1,13 +1,13 @@
 {
-  "name": "domain-check",
+  "name": "dispo",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "domain-check": "./bin/domain-check.ts"
+    "dispo": "./bin/dispo.ts"
   },
   "scripts": {
-    "start": "bun run bin/domain-check.ts",
+    "start": "bun run bin/dispo.ts",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },

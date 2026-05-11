@@ -7,12 +7,12 @@ export interface CliArgs {
   help: boolean;
 }
 
-export const HELP_TEXT = `domain-check — check RDAP availability for one or more domains
+export const HELP_TEXT = `dispo — check domain availability (RDAP first, WHOIS fallback)
 
 Usage:
-  domain-check [options] <domain>...
-  echo "foo.com\\nbar.io" | domain-check [options]
-  domain-check --file domains.txt [options]
+  dispo [options] <domain>...
+  echo "foo.com\\nbar.io" | dispo [options]
+  dispo --file domains.txt [options]
 
 Options:
   --file, -f <path>          Read newline-separated domains from a file

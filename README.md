@@ -1,4 +1,4 @@
-# domain-check
+# dispo
 
 CLI to check domain availability without a paid API. RDAP first, WHOIS fallback when RDAP is unavailable for the TLD.
 
@@ -6,7 +6,7 @@ CLI to check domain availability without a paid API. RDAP first, WHOIS fallback 
 
 ```sh
 bun install
-chmod +x bin/domain-check.ts
+chmod +x bin/dispo.ts
 ```
 
 Optional global symlink:
@@ -18,11 +18,11 @@ bun link
 ## Usage
 
 ```sh
-bun run bin/domain-check.ts google.com openai.io anthropic.fr
-echo "foo.com\nbar.io" | bun run bin/domain-check.ts
-bun run bin/domain-check.ts --file domains.txt
-bun run bin/domain-check.ts --json google.com openai.io
-bun run bin/domain-check.ts --concurrency 16 --timeout 8000 google.com
+dispo google.com openai.io anthropic.fr
+echo "foo.com\nbar.io" | dispo
+dispo --file domains.txt
+dispo --json google.com openai.io
+dispo --concurrency 16 --timeout 8000 google.com
 ```
 
 ### Output
