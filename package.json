@@ -8,6 +8,12 @@
   },
   "scripts": {
     "start": "bun run bin/dispo.ts",
+    "build": "bun build --compile ./bin/dispo.ts --outfile dist/dispo",
+    "build:mac-arm64": "bun build --compile --target bun-darwin-arm64 ./bin/dispo.ts --outfile dist/dispo-macos-arm64",
+    "build:mac-x64": "bun build --compile --target bun-darwin-x64 ./bin/dispo.ts --outfile dist/dispo-macos-x64",
+    "build:linux-arm64": "bun build --compile --target bun-linux-arm64 ./bin/dispo.ts --outfile dist/dispo-linux-arm64",
+    "build:linux-x64": "bun build --compile --target bun-linux-x64 ./bin/dispo.ts --outfile dist/dispo-linux-x64",
+    "build:all": "bun run build:mac-arm64 && bun run build:mac-x64 && bun run build:linux-arm64 && bun run build:linux-x64",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },

@@ -4,12 +4,29 @@ CLI to check domain availability without a paid API. RDAP first, WHOIS fallback 
 
 ## Install
 
+### Standalone binary (no Bun required at runtime)
+
 ```sh
-bun install
-chmod +x bin/dispo.ts
+bun run build          # dist/dispo for current platform
+bun run build:all      # all platforms → dist/
 ```
 
-Optional global symlink:
+Cross-compile targets: `build:mac-arm64`, `build:mac-x64`, `build:linux-arm64`, `build:linux-x64`.
+
+Move the binary anywhere in your `$PATH`:
+
+```sh
+mv dist/dispo /usr/local/bin/dispo
+```
+
+### Run from source
+
+```sh
+bun install
+bun run bin/dispo.ts google.com
+```
+
+Optional global symlink (requires Bun):
 
 ```sh
 bun link
