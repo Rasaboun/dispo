@@ -7,10 +7,6 @@ CLI to check domain availability without a paid API. RDAP first, WHOIS fallback 
 ### Global CLI (recommended)
 
 ```sh
-# from npm (requires Node or Bun)
-npm install -g dispo
-
-# from GitHub directly (requires Bun)
 bun install -g github:Rasaboun/dispo
 ```
 
@@ -90,6 +86,10 @@ zzz-nope-xyz.io       available   whois   890ms
 2. **WHOIS fallback**: When the TLD has no RDAP service (rdap.org returns 4xx without redirecting) or RDAP errors out, the CLI opens a TCP socket to `whois.iana.org:43`, follows the `refer:` referral to the TLD's WHOIS server, and classifies the response by matching common "no match" / "Domain Name:" patterns.
 
 Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` (empty today — current major registries follow the default rule).
+
+## Claude Code skill
+
+Copy `.claude/skills/dispo.md` into your project's `.claude/skills/` directory so Claude knows to reach for `dispo` when checking domain availability.
 
 ## Tests
 
