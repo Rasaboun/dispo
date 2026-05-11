@@ -1,5 +1,7 @@
 # dispo
 
+[![skills.sh](https://skills.sh/b/Rasaboun/dispo)](https://skills.sh/Rasaboun/dispo)
+
 CLI to check domain availability without a paid API. RDAP first, WHOIS fallback when RDAP is unavailable for the TLD.
 
 ## Install
@@ -89,7 +91,11 @@ Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` 
 
 ## Claude Code skill
 
-Copy `.claude/skills/dispo.md` into your project's `.claude/skills/` directory so Claude knows to reach for `dispo` when checking domain availability.
+Install via [skills.sh](https://skills.sh/Rasaboun/dispo) so Claude automatically uses `dispo` when checking domain availability:
+
+```sh
+bunx skills add Rasaboun/dispo
+```
 
 ## Tests
 
