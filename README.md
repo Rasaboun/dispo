@@ -89,9 +89,9 @@ zzz-nope-xyz.io       available   whois   890ms
 
 Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` (empty today — current major registries follow the default rule).
 
-## Claude Code skill
+## AI agent skill
 
-Install via [skills.sh](https://skills.sh/Rasaboun/dispo) so Claude automatically uses `dispo` when checking domain availability:
+Install via [skills.sh](https://skills.sh/Rasaboun/dispo) so any compatible AI agent automatically uses `dispo` when checking domain availability:
 
 ```sh
 bunx skills add Rasaboun/dispo
