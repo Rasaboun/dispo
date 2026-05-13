@@ -41,6 +41,7 @@ dispo google.com openai.io anthropic.fr
 | `--file <path>` | Read domains from a newline-separated file |
 | `--tlds, -T <list>` | Comma-separated TLDs; positional args become keywords |
 | `--concurrency <n>` | Parallel lookups (default 8) |
+| `--version, -v` | Show version |
 | `--timeout <ms>` | Per-request timeout (default 10000) |
 
 ## Output

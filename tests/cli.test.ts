@@ -48,6 +48,11 @@ describe('parseArgs', () => {
   test('--tlds trims spaces and lowercases', () => {
     expect(parseArgs(['--tlds', ' COM , IO ']).tlds).toEqual(['com', 'io']);
   });
+
+  test('--version and -v', () => {
+    expect(parseArgs(['--version']).version).toBe(true);
+    expect(parseArgs(['-v']).version).toBe(true);
+  });
 });
 
 describe('normalizeDomain', () => {
@@ -74,7 +79,7 @@ describe('normalizeDomain', () => {
 describe('collectDomains', () => {
   test('merges args + file + stdin and dedupes', () => {
     const r = collectDomains(
-      { domains: ['a.com', 'b.io'], json: false, concurrency: 8, timeoutMs: 1000, help: false },
+      { domains: ['a.com', 'b.io'], json: false, concurrency: 8, timeoutMs: 1000, help: false, version: false },
       'b.io\nc.dev\n',
       'd.fr\na.com\n',
     );
@@ -83,7 +88,7 @@ describe('collectDomains', () => {
 
   test('reports invalid inputs', () => {
     const r = collectDomains(
-      { domains: ['ok.com', 'bad'], json: false, concurrency: 8, timeoutMs: 1000, help: false },
+      { domains: ['ok.com', 'bad'], json: false, concurrency: 8, timeoutMs: 1000, help: false, version: false },
       undefined,
       undefined,
     );

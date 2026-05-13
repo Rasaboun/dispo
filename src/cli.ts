@@ -6,6 +6,7 @@ export interface CliArgs {
   file?: string;
   tlds?: string[];
   help: boolean;
+  version: boolean;
 }
 
 export const HELP_TEXT = `dispo — check domain availability (RDAP first, WHOIS fallback)
@@ -22,6 +23,7 @@ Options:
   --json                     Output JSON instead of a table
   --concurrency, -c <n>      Max parallel lookups (default 8)
   --timeout, -t <ms>         Per-request timeout in ms (default 10000)
+  --version, -v              Show version
   --help, -h                 Show this help
 
 Exit codes:
@@ -39,6 +41,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     concurrency: 8,
     timeoutMs: 10_000,
     help: false,
+    version: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -47,6 +50,10 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case '--help':
       case '-h':
         args.help = true;
+        break;
+      case '--version':
+      case '-v':
+        args.version = true;
         break;
       case '--json':
         args.json = true;

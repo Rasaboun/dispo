@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { readFile } from 'node:fs/promises';
+import pkg from '../package.json' with { type: 'json' };
 import { CliError, HELP_TEXT, collectDomains, expandKeywords, parseArgs } from '../src/cli.ts';
 import { runPool } from '../src/pool.ts';
 import { checkDomain } from '../src/rdap.ts';
@@ -28,6 +29,11 @@ async function main(): Promise<number> {
 
   if (args.help) {
     process.stdout.write(HELP_TEXT);
+    return 0;
+  }
+
+  if (args.version) {
+    process.stdout.write(`${pkg.version}\n`);
     return 0;
   }
 
