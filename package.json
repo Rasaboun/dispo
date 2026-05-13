@@ -1,6 +1,6 @@
 {
   "name": "@rasaboun/dispo",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI to check domain availability without a paid API. RDAP first, WHOIS fallback.",
   "type": "module",
   "bin": {

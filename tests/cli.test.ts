@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { CliError, collectDomains, normalizeDomain, parseArgs } from '../src/cli.ts';
+import { CliError, collectDomains, expandKeywords, normalizeDomain, parseArgs } from '../src/cli.ts';
 
 describe('parseArgs', () => {
   test('domains as positional args', () => {
@@ -38,6 +38,15 @@ describe('parseArgs', () => {
 
   test('missing flag value', () => {
     expect(() => parseArgs(['-c'])).toThrow(CliError);
+  });
+
+  test('--tlds and -T parse comma-separated list', () => {
+    expect(parseArgs(['--tlds', 'com,io,net']).tlds).toEqual(['com', 'io', 'net']);
+    expect(parseArgs(['-T', 'org,dev']).tlds).toEqual(['org', 'dev']);
+  });
+
+  test('--tlds trims spaces and lowercases', () => {
+    expect(parseArgs(['--tlds', ' COM , IO ']).tlds).toEqual(['com', 'io']);
   });
 });
 
@@ -80,5 +89,29 @@ describe('collectDomains', () => {
     );
     expect(r.valid).toEqual(['ok.com']);
     expect(r.invalid).toEqual(['bad']);
+  });
+});
+
+describe('expandKeywords', () => {
+  test('expands keyword × tlds', () => {
+    expect(expandKeywords(['myproject'], ['com', 'io'])).toEqual(['myproject.com', 'myproject.io']);
+  });
+
+  test('expands multiple keywords', () => {
+    expect(expandKeywords(['foo', 'bar'], ['com', 'dev'])).toEqual([
+      'foo.com', 'foo.dev', 'bar.com', 'bar.dev',
+    ]);
+  });
+
+  test('dedupes combinations', () => {
+    expect(expandKeywords(['foo', 'foo'], ['com', 'com'])).toEqual(['foo.com']);
+  });
+
+  test('lowercases and trims', () => {
+    expect(expandKeywords(['FOO '], ['COM'])).toEqual(['foo.com']);
+  });
+
+  test('skips empty keywords', () => {
+    expect(expandKeywords(['foo', '', 'bar'], ['com'])).toEqual(['foo.com', 'bar.com']);
   });
 });

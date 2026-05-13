@@ -39,6 +39,7 @@ dispo google.com openai.io anthropic.fr
 |------|-------------|
 | `--json` | Machine-readable JSON output |
 | `--file <path>` | Read domains from a newline-separated file |
+| `--tlds, -T <list>` | Comma-separated TLDs; positional args become keywords |
 | `--concurrency <n>` | Parallel lookups (default 8) |
 | `--timeout <ms>` | Per-request timeout (default 10000) |
 
@@ -63,19 +64,31 @@ google.com    registered  rdap    83ms
 - **WHOIS `available`** — reliable for `.co`, `.io`; may fail for obscure TLDs
 - **`unknown`** — re-run as a standalone call to confirm
 
+## Keyword expansion
+
+Use `--tlds` when checking many TLD variants of a keyword:
+
+```sh
+dispo --tlds com,app,co,io,net spots
+dispo -T dev,xyz,me foo bar
+```
+
+Positional args become keywords. Each keyword × each TLD = one domain check.
+
 ## Strategy for name searches
 
 1. **Batch aggressively** — 10–20 domains per call
-2. **Check `.com`, `.app`, `.co`** for each candidate
-3. **Prefer `.app` for mobile apps**, `.com` for global brands
-4. **Only surface RDAP `available` results** as confirmed to the user
-5. **Flag WHOIS `available`** as "likely available — verify before purchasing"
+2. **Use `--tlds` for TLD sweeps** — faster than typing each full domain
+3. **Check `.com`, `.app`, `.co`** for each candidate
+4. **Prefer `.app` for mobile apps**, `.com` for global brands
+5. **Only surface RDAP `available` results** as confirmed to the user
+6. **Flag WHOIS `available`** as "likely available — verify before purchasing"
 
 ## Example
 
 User asks: "find an available domain for my food app"
 
 ```sh
-dispo spots.app spots.com wishspot.app placepin.app gemspot.app
-dispo viree.app viree.co mapcarte.app placeboard.app
+dispo --tlds com,app,co spots wishspot placepin gemspot
+dispo --tlds app,co viree mapcarte placeboard
 ```

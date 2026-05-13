@@ -6,10 +6,18 @@ CLI to check domain availability without a paid API. RDAP first, WHOIS fallback 
 
 ## Install
 
-### Global CLI (recommended)
+### One-shot (no install)
 
 ```sh
-bun install -g github:Rasaboun/dispo
+npx @rasaboun/dispo google.com openai.io
+bunx @rasaboun/dispo google.com openai.io
+```
+
+### Global CLI
+
+```sh
+npm install -g @rasaboun/dispo
+bun install -g @rasaboun/dispo
 ```
 
 Then run from anywhere:
@@ -53,7 +61,9 @@ dispo google.com openai.io anthropic.fr
 echo "foo.com\nbar.io" | dispo
 dispo --file domains.txt
 dispo --json google.com openai.io
-dispo --concurrency 16 --timeout 8000 google.com
+dispo --concurrency 3 --timeout 8000 google.com openai.io anthropic.fr
+dispo --tlds com,app,co,io wishspot placepin
+dispo -T dev,xyz,app foo bar
 ```
 
 ### Output

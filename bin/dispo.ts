@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { readFile } from 'node:fs/promises';
-import { CliError, HELP_TEXT, collectDomains, parseArgs } from '../src/cli.ts';
+import { CliError, HELP_TEXT, collectDomains, expandKeywords, parseArgs } from '../src/cli.ts';
 import { runPool } from '../src/pool.ts';
 import { checkDomain } from '../src/rdap.ts';
 import { exitCodeFor, renderJson, renderTable } from '../src/render.ts';
@@ -29,6 +29,15 @@ async function main(): Promise<number> {
   if (args.help) {
     process.stdout.write(HELP_TEXT);
     return 0;
+  }
+
+  if (args.tlds && args.tlds.length > 0) {
+    if (args.domains.length === 0) {
+      process.stderr.write(`--tlds requires at least one keyword domain.\n\n${HELP_TEXT}`);
+      return 1;
+    }
+    args.domains = expandKeywords(args.domains, args.tlds);
+    delete args.tlds;
   }
 
   let fileContents: string | undefined;

@@ -4,6 +4,7 @@ export interface CliArgs {
   concurrency: number;
   timeoutMs: number;
   file?: string;
+  tlds?: string[];
   help: boolean;
 }
 
@@ -13,9 +14,11 @@ Usage:
   dispo [options] <domain>...
   echo "foo.com\\nbar.io" | dispo [options]
   dispo --file domains.txt [options]
+  dispo --tlds com,io,net <keyword>...
 
 Options:
   --file, -f <path>          Read newline-separated domains from a file
+  --tlds, -T <list>          Comma-separated TLDs; positional args become keywords
   --json                     Output JSON instead of a table
   --concurrency, -c <n>      Max parallel lookups (default 8)
   --timeout, -t <ms>         Per-request timeout in ms (default 10000)
@@ -51,6 +54,10 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case '--file':
       case '-f':
         args.file = required(argv, ++i, a);
+        break;
+      case '--tlds':
+      case '-T':
+        args.tlds = required(argv, ++i, a).split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
         break;
       case '--concurrency':
       case '-c':
@@ -117,4 +124,22 @@ export function collectDomains(
     valid.push(n);
   }
   return { valid, invalid };
+}
+
+export function expandKeywords(keywords: readonly string[], tlds: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const k of keywords) {
+    const base = k.trim().toLowerCase();
+    if (!base) continue;
+    for (const t of tlds) {
+      const tld = t.trim().toLowerCase();
+      if (!tld) continue;
+      const d = `${base}.${tld}`;
+      if (seen.has(d)) continue;
+      seen.add(d);
+      out.push(d);
+    }
+  }
+  return out;
 }
