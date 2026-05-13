@@ -22,7 +22,8 @@
     "build:all": "bun run build:mac-arm64 && bun run build:mac-x64 && bun run build:linux-arm64 && bun run build:linux-x64",
     "build:npm": "bun build ./bin/dispo.ts --outfile dist/dispo.js --target node",
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "prepublishOnly": "bun run build:npm && bun test"
   },
   "keywords": [
     "domain",
