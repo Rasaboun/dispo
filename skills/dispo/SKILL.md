@@ -6,7 +6,7 @@ metadata:
   version: "1.0.0"
 ---
 
-# dispo — domain availability checker
+# dispo - domain availability checker
 
 Use `dispo` to check whether domains are registered or available. RDAP first, WHOIS fallback.
 
@@ -26,7 +26,7 @@ bun install -g github:Rasaboun/dispo
 
 ## Usage
 
-Batch everything into a single call — always check multiple TLDs at once:
+Batch everything into a single call - always check multiple TLDs at once:
 
 ```sh
 dispo wishspot.app wishspot.com wishspot.co
@@ -55,15 +55,15 @@ google.com    registered  rdap    83ms
 
 ### Status values
 
-- `available` — domain is free to register
-- `registered` — domain is taken
-- `unknown` — could not determine (re-check individually)
+- `available` - domain is free to register
+- `registered` - domain is taken
+- `unknown` - could not determine (re-check individually)
 
 ### Source reliability
 
-- **RDAP `available`** — fully authoritative, trust it
-- **WHOIS `available`** — reliable for `.co`, `.io`; may fail for obscure TLDs
-- **`unknown`** — re-run as a standalone call to confirm
+- **RDAP `available`** - fully authoritative, trust it
+- **WHOIS `available`** - reliable for `.co`, `.io`; may fail for obscure TLDs
+- **`unknown`** - re-run as a standalone call to confirm
 
 ## Keyword expansion
 
@@ -78,12 +78,12 @@ Positional args become keywords. Each keyword × each TLD = one domain check.
 
 ## Strategy for name searches
 
-1. **Batch aggressively** — 10–20 domains per call
-2. **Use `--tlds` for TLD sweeps** — faster than typing each full domain
+1. **Batch aggressively** - 10–20 domains per call
+2. **Use `--tlds` for TLD sweeps** - faster than typing each full domain
 3. **Check `.com`, `.app`, `.co`** for each candidate
 4. **Prefer `.app` for mobile apps**, `.com` for global brands
 5. **Only surface RDAP `available` results** as confirmed to the user
-6. **Flag WHOIS `available`** as "likely available — verify before purchasing"
+6. **Flag WHOIS `available`** as "likely available - verify before purchasing"
 
 ## Example
 

@@ -82,22 +82,22 @@ zzz-nope-xyz.io       available   whois   890ms
 
 ### Status values
 
-- `registered` — domain exists
-- `available` — domain not registered
-- `unknown` — neither RDAP nor WHOIS could classify confidently
+- `registered` - domain exists
+- `available` - domain not registered
+- `unknown` - neither RDAP nor WHOIS could classify confidently
 
 ### Exit codes
 
-- `0` — every domain resolved (registered or available)
-- `1` — argument / file error
-- `2` — at least one `unknown`
+- `0` - every domain resolved (registered or available)
+- `1` - argument / file error
+- `2` - at least one `unknown`
 
 ## How it works
 
 1. **RDAP**: GET `https://rdap.org/domain/{domain}` with `accept: application/rdap+json`. If the bootstrap redirects to a registry endpoint, the HTTP code is authoritative (`200`=registered, `404`=available).
 2. **WHOIS fallback**: When the TLD has no RDAP service (rdap.org returns 4xx without redirecting) or RDAP errors out, the CLI opens a TCP socket to `whois.iana.org:43`, follows the `refer:` referral to the TLD's WHOIS server, and classifies the response by matching common "no match" / "Domain Name:" patterns.
 
-Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` (empty today — current major registries follow the default rule).
+Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` (empty today - current major registries follow the default rule).
 
 ## AI agent skill
 

@@ -9,7 +9,7 @@ export interface CliArgs {
   version: boolean;
 }
 
-export const HELP_TEXT = `dispo — check domain availability (RDAP first, WHOIS fallback)
+export const HELP_TEXT = `dispo - check domain availability (RDAP first, WHOIS fallback)
 
 Usage:
   dispo [options] <domain>...
@@ -27,9 +27,9 @@ Options:
   --help, -h                 Show this help
 
 Exit codes:
-  0 — all domains resolved (registered or available)
-  2 — at least one result was "unknown"
-  1 — argument or file error
+  0 - all domains resolved (registered or available)
+  2 - at least one result was "unknown"
+  1 - argument or file error
 `;
 
 export class CliError extends Error {}
