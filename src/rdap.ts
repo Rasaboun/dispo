@@ -1,8 +1,9 @@
 import type { CheckOptions, DomainResult } from './types.ts';
+import { getRdapBaseUrl } from './rdap-bootstrap.ts';
 import { getMapper } from './tld-overrides.ts';
 import { whoisCheck } from './whois.ts';
 
-const RDAP_BOOTSTRAP = 'https://rdap.org/domain/';
+const RDAP_ORG_BOOTSTRAP = 'https://rdap.org/domain/';
 const BOOTSTRAP_HOST = 'rdap.org';
 
 export async function checkDomain(
@@ -30,24 +31,35 @@ export async function checkDomain(
   let rdapError: string | undefined;
 
   try {
-    const res = await fetchImpl(RDAP_BOOTSTRAP + encodeURIComponent(domain), {
-      method: 'GET',
-      redirect: 'follow',
-      headers: { accept: 'application/rdap+json, application/json' },
-      signal: controller.signal,
-    });
-    rdapStatus = res.status;
-    const finalHost = safeHost(res.url);
-    rdapReachedRegistry = finalHost !== null && finalHost !== BOOTSTRAP_HOST;
+    const tld = domain.split('.').pop()?.toLowerCase() ?? '';
+    const rdapBaseUrl = tld ? await getRdapBaseUrl(tld, fetchImpl, controller.signal) : null;
 
-    if (rdapReachedRegistry || res.status === 200) {
+    if (rdapBaseUrl) {
+      rdapReachedRegistry = true;
+      const res = await rdapFetch(fetchImpl, rdapUrl(rdapBaseUrl, domain), controller.signal);
+      rdapStatus = res.status;
       const status = getMapper(domain)(res.status);
       if (status !== 'unknown') {
         return finish({ status, source: 'rdap', httpStatus: res.status });
       }
+    } else {
+      rdapError = 'no RDAP service for this TLD';
     }
   } catch (err) {
     rdapError = err instanceof Error ? err.message : String(err);
+    const fallback = await tryRdapOrg(domain, fetchImpl, controller.signal);
+    if (fallback) {
+      rdapStatus = fallback.status;
+      rdapReachedRegistry = fallback.reachedRegistry;
+      rdapError = fallback.error ?? rdapError;
+
+      if (fallback.reachedRegistry || fallback.status === 200) {
+        const status = getMapper(domain)(fallback.status);
+        if (status !== 'unknown') {
+          return finish({ status, source: 'rdap', httpStatus: fallback.status });
+        }
+      }
+    }
   } finally {
     clearTimeout(timer);
   }
@@ -69,6 +81,41 @@ export async function checkDomain(
     whoisServer: whois.server ?? undefined,
     error: whois.error,
   });
+}
+
+async function rdapFetch(
+  fetchImpl: typeof fetch,
+  url: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  return fetchImpl(url, {
+    method: 'GET',
+    redirect: 'follow',
+    headers: { accept: 'application/rdap+json, application/json' },
+    signal,
+  });
+}
+
+function rdapUrl(baseUrl: string, domain: string): string {
+  const sep = baseUrl.endsWith('/') ? '' : '/';
+  return `${baseUrl}${sep}domain/${encodeURIComponent(domain)}`;
+}
+
+async function tryRdapOrg(
+  domain: string,
+  fetchImpl: typeof fetch,
+  signal: AbortSignal,
+): Promise<{ status: number; reachedRegistry: boolean; error?: string } | null> {
+  try {
+    const res = await rdapFetch(fetchImpl, RDAP_ORG_BOOTSTRAP + encodeURIComponent(domain), signal);
+    const finalHost = safeHost(res.url);
+    return {
+      status: res.status,
+      reachedRegistry: finalHost !== null && finalHost !== BOOTSTRAP_HOST,
+    };
+  } catch (err) {
+    return null;
+  }
 }
 
 function safeHost(url: string): string | null {

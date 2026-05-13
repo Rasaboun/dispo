@@ -94,8 +94,9 @@ zzz-nope-xyz.io       available   whois   890ms
 
 ## How it works
 
-1. **RDAP**: GET `https://rdap.org/domain/{domain}` with `accept: application/rdap+json`. If the bootstrap redirects to a registry endpoint, the HTTP code is authoritative (`200`=registered, `404`=available).
-2. **WHOIS fallback**: When the TLD has no RDAP service (rdap.org returns 4xx without redirecting) or RDAP errors out, the CLI opens a TCP socket to `whois.iana.org:43`, follows the `refer:` referral to the TLD's WHOIS server, and classifies the response by matching common "no match" / "Domain Name:" patterns.
+1. **RDAP bootstrap**: Fetch the IANA RDAP DNS bootstrap file (`https://data.iana.org/rdap/dns.json`) once per process and map each TLD to its registry RDAP endpoint. If the IANA bootstrap fetch fails, `rdap.org` is used as a last-resort fallback.
+2. **Registry RDAP**: Query the registry endpoint directly. The HTTP code is authoritative (`200`=registered, `404`=available).
+3. **WHOIS fallback**: When the TLD has no RDAP service or RDAP errors out, the CLI opens a TCP socket to `whois.iana.org:43`, follows the `refer:` referral to the TLD's WHOIS server, and classifies the response by matching common "no match" / "Domain Name:" patterns.
 
 Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` (empty today - current major registries follow the default rule).
 
