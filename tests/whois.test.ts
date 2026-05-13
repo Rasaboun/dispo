@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { classify } from '../src/whois.ts';
+import { classify, getWhoisServer } from '../src/whois.ts';
 
 describe('classify', () => {
   test('available: "No match"', () => {
@@ -47,5 +47,19 @@ Creation Date: 1997-09-15`;
     const raw = `% This is the WHOIS server
 % No match for ZZZ.IO`;
     expect(classify(raw)).toBe('available');
+  });
+});
+
+describe('getWhoisServer', () => {
+  test('does not match across lines when whois: is empty', () => {
+    const raw = `whois:        \n\nstatus:       ACTIVE`;
+    const match = raw.match(/^\s*refer:[ \t]*(\S+)/im) || raw.match(/^\s*whois:[ \t]*(\S+)/im);
+    expect(match).toBeNull();
+  });
+
+  test('captures whois server value on same line', () => {
+    const raw = `whois:        whois.nic.io\nstatus:       ACTIVE`;
+    const match = raw.match(/^\s*refer:[ \t]*(\S+)/im) || raw.match(/^\s*whois:[ \t]*(\S+)/im);
+    expect(match?.[1]).toBe('whois.nic.io');
   });
 });

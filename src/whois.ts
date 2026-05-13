@@ -52,12 +52,12 @@ function msgOf(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-async function getWhoisServer(tld: string, timeoutMs: number): Promise<string | null> {
+export async function getWhoisServer(tld: string, timeoutMs: number): Promise<string | null> {
   const cached = tldServerCache.get(tld);
   if (cached !== undefined) return cached;
 
   const raw = await whoisQuery(IANA_HOST, tld, timeoutMs);
-  const match = raw.match(/^\s*refer:\s*(\S+)/im) || raw.match(/^\s*whois:\s*(\S+)/im);
+  const match = raw.match(/^\s*refer:[ \t]*(\S+)/im) || raw.match(/^\s*whois:[ \t]*(\S+)/im);
   const server = match?.[1]?.toLowerCase() ?? null;
   tldServerCache.set(tld, server);
   return server;
