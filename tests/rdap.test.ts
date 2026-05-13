@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import { clearRdapBootstrapCache } from '../src/rdap-bootstrap.ts';
-import { checkDomain } from '../src/rdap.ts';
+import { checkDomain, clearRdapRuntimeState } from '../src/rdap.ts';
 import type { WhoisResult } from '../src/whois.ts';
 
 const BOOTSTRAP_URL = 'https://data.iana.org/rdap/dns.json';
@@ -37,6 +37,25 @@ function directRdapFetch(statuses: Record<string, number>, tlds = ['com']): type
     const domain = rawUrl.split('/domain/')[1];
     if (domain) {
       return response(statuses[decodeURIComponent(domain)] ?? 500, rawUrl);
+    }
+
+    throw new Error(`unexpected URL: ${rawUrl}`);
+  }) as unknown as typeof fetch;
+}
+
+function directRdapSequenceFetch(statuses: number[], tlds = ['com']): typeof fetch {
+  let registryCalls = 0;
+  return (async (url: unknown) => {
+    const rawUrl = String(url);
+    if (rawUrl === BOOTSTRAP_URL) {
+      return jsonResponse(200, rawUrl, { services: [[tlds, [RDAP_BASE]]] });
+    }
+
+    const domain = rawUrl.split('/domain/')[1];
+    if (domain) {
+      const status = statuses[Math.min(registryCalls, statuses.length - 1)]!;
+      registryCalls++;
+      return response(status, rawUrl);
     }
 
     throw new Error(`unexpected URL: ${rawUrl}`);
@@ -83,7 +102,10 @@ function jsonResponse(status: number, url: string, body: unknown): Response {
 const noFallback = { whoisFallback: false } as const;
 const fakeWhois = (result: WhoisResult) => async () => result;
 
-beforeEach(() => clearRdapBootstrapCache());
+beforeEach(() => {
+  clearRdapBootstrapCache();
+  clearRdapRuntimeState();
+});
 
 describe('checkDomain (RDAP only)', () => {
   test('200 → registered via RDAP', async () => {
@@ -110,6 +132,31 @@ describe('checkDomain (RDAP only)', () => {
       ...noFallback,
     });
     expect(r.status).toBe('unknown');
+  });
+
+  test('does not fall back to WHOIS after transient registry RDAP failure', async () => {
+    let whoisCalls = 0;
+    const r = await checkDomain('example.com', {
+      fetchImpl: directRdapSequenceFetch([429, 429, 429]),
+      whoisImpl: async () => {
+        whoisCalls++;
+        return { status: 'registered', raw: '', server: null };
+      },
+    });
+    expect(r.status).toBe('unknown');
+    expect(r.source).toBe('rdap');
+    expect(r.httpStatus).toBe(429);
+    expect(r.error).toBe('RDAP HTTP 429');
+    expect(whoisCalls).toBe(0);
+  });
+
+  test('retries transient registry RDAP status', async () => {
+    const r = await checkDomain('example.com', {
+      fetchImpl: directRdapSequenceFetch([429, 200]),
+      ...noFallback,
+    });
+    expect(r.status).toBe('registered');
+    expect(r.source).toBe('rdap');
   });
 
   test('TLD without bootstrap RDAP endpoint → unknown', async () => {

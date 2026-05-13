@@ -5,6 +5,14 @@ import { whoisCheck } from './whois.ts';
 
 const RDAP_ORG_BOOTSTRAP = 'https://rdap.org/domain/';
 const BOOTSTRAP_HOST = 'rdap.org';
+const RDAP_MAX_ATTEMPTS = 3;
+const RDAP_RETRY_DELAY_MS = 300;
+
+let rdapHostQueues = new Map<string, Promise<void>>();
+
+export function clearRdapRuntimeState(): void {
+  rdapHostQueues = new Map<string, Promise<void>>();
+}
 
 export async function checkDomain(
   domain: string,
@@ -29,6 +37,7 @@ export async function checkDomain(
   let rdapStatus: number | undefined;
   let rdapReachedRegistry = false;
   let rdapError: string | undefined;
+  let shouldTryWhois = true;
 
   try {
     const tld = domain.split('.').pop()?.toLowerCase() ?? '';
@@ -36,12 +45,18 @@ export async function checkDomain(
 
     if (rdapBaseUrl) {
       rdapReachedRegistry = true;
-      const res = await rdapFetch(fetchImpl, rdapUrl(rdapBaseUrl, domain), controller.signal);
+      const res = await rdapFetchWithRetry(
+        fetchImpl,
+        rdapUrl(rdapBaseUrl, domain),
+        controller.signal,
+      );
       rdapStatus = res.status;
       const status = getMapper(domain)(res.status);
       if (status !== 'unknown') {
         return finish({ status, source: 'rdap', httpStatus: res.status });
       }
+      rdapError = `RDAP HTTP ${res.status}`;
+      if (isTransientRdapStatus(res.status)) shouldTryWhois = false;
     } else {
       rdapError = 'no RDAP service for this TLD';
     }
@@ -64,7 +79,7 @@ export async function checkDomain(
     clearTimeout(timer);
   }
 
-  if (!whoisFallback) {
+  if (!whoisFallback || !shouldTryWhois) {
     return finish({
       status: 'unknown',
       source: 'rdap',
@@ -94,6 +109,59 @@ async function rdapFetch(
     headers: { accept: 'application/rdap+json, application/json' },
     signal,
   });
+}
+
+async function rdapFetchWithRetry(
+  fetchImpl: typeof fetch,
+  url: string,
+  signal: AbortSignal,
+): Promise<Response> {
+  let last: Response | undefined;
+  for (let attempt = 1; attempt <= RDAP_MAX_ATTEMPTS; attempt++) {
+    last = await withRdapHostQueue(url, () => rdapFetch(fetchImpl, url, signal));
+    if (!isTransientRdapStatus(last.status) || attempt === RDAP_MAX_ATTEMPTS) return last;
+    await delay(RDAP_RETRY_DELAY_MS * attempt, signal);
+  }
+  return last!;
+}
+
+async function withRdapHostQueue<T>(url: string, task: () => Promise<T>): Promise<T> {
+  const key = rdapQueueKey(url);
+  const previous = rdapHostQueues.get(key) ?? Promise.resolve();
+  const current = previous.catch(() => undefined).then(task);
+  const release = current
+    .then(() => undefined, () => undefined)
+    .finally(() => {
+      if (rdapHostQueues.get(key) === release) rdapHostQueues.delete(key);
+    });
+  rdapHostQueues.set(key, release);
+  return current;
+}
+
+function isTransientRdapStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function delay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException('aborted', 'AbortError'));
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(new DOMException('aborted', 'AbortError'));
+    }, { once: true });
+  });
+}
+
+function rdapQueueKey(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
 }
 
 function rdapUrl(baseUrl: string, domain: string): string {

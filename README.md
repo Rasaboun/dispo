@@ -62,6 +62,7 @@ echo "foo.com\nbar.io" | dispo
 dispo --file domains.txt
 dispo --json google.com openai.io
 dispo --concurrency 3 --timeout 8000 google.com openai.io anthropic.fr
+dispo --delay 1000 --tlds com,io,dev,app wishspot placepin
 dispo --tlds com,app,co,io wishspot placepin
 dispo -T dev,xyz,app foo bar
 ```
@@ -96,7 +97,9 @@ zzz-nope-xyz.io       available   whois   890ms
 
 1. **RDAP bootstrap**: Fetch the IANA RDAP DNS bootstrap file (`https://data.iana.org/rdap/dns.json`) once per process and map each TLD to its registry RDAP endpoint. If the IANA bootstrap fetch fails, `rdap.org` is used as a last-resort fallback.
 2. **Registry RDAP**: Query the registry endpoint directly. The HTTP code is authoritative (`200`=registered, `404`=available).
-3. **WHOIS fallback**: When the TLD has no RDAP service or RDAP errors out, the CLI opens a TCP socket to `whois.iana.org:43`, follows the `refer:` referral to the TLD's WHOIS server, and classifies the response by matching common "no match" / "Domain Name:" patterns.
+3. **WHOIS fallback**: When the TLD has no RDAP service or RDAP errors out, the CLI opens a TCP socket to `whois.iana.org:43`, follows the `refer:` referral to the TLD's WHOIS server, and classifies the response by matching common "no match" / "Domain Name:" patterns. WHOIS queries are serialized per server and retried once when a response is unclassifiable, which helps with registries that return empty responses under concurrent load.
+
+Lookups are paced by default with a 500ms delay between starts to avoid registry bursts. Use `--delay 0` for maximum speed, or a higher value such as `--delay 1000` for conservative bulk checks.
 
 Per-TLD overrides for non-default RDAP semantics live in `src/tld-overrides.ts` (empty today - current major registries follow the default rule).
 

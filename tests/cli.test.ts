@@ -12,9 +12,18 @@ describe('parseArgs', () => {
     expect(a.json).toBe(true);
   });
 
+  test('default delay paces lookups', () => {
+    expect(parseArgs([]).delayMs).toBe(500);
+  });
+
   test('--concurrency and -c parse positive int', () => {
     expect(parseArgs(['--concurrency', '16']).concurrency).toBe(16);
     expect(parseArgs(['-c', '4']).concurrency).toBe(4);
+  });
+
+  test('--delay and --delay-ms parse non-negative int', () => {
+    expect(parseArgs(['--delay', '500']).delayMs).toBe(500);
+    expect(parseArgs(['--delay-ms', '0']).delayMs).toBe(0);
   });
 
   test('--timeout and -t', () => {
@@ -34,6 +43,11 @@ describe('parseArgs', () => {
   test('rejects non-positive concurrency', () => {
     expect(() => parseArgs(['-c', '0'])).toThrow(CliError);
     expect(() => parseArgs(['-c', 'abc'])).toThrow(CliError);
+  });
+
+  test('rejects negative delay', () => {
+    expect(() => parseArgs(['--delay', '-1'])).toThrow(CliError);
+    expect(() => parseArgs(['--delay', 'abc'])).toThrow(CliError);
   });
 
   test('missing flag value', () => {
@@ -79,7 +93,7 @@ describe('normalizeDomain', () => {
 describe('collectDomains', () => {
   test('merges args + file + stdin and dedupes', () => {
     const r = collectDomains(
-      { domains: ['a.com', 'b.io'], json: false, concurrency: 8, timeoutMs: 1000, help: false, version: false },
+      { domains: ['a.com', 'b.io'], json: false, concurrency: 8, delayMs: 500, timeoutMs: 1000, help: false, version: false },
       'b.io\nc.dev\n',
       'd.fr\na.com\n',
     );
@@ -88,7 +102,7 @@ describe('collectDomains', () => {
 
   test('reports invalid inputs', () => {
     const r = collectDomains(
-      { domains: ['ok.com', 'bad'], json: false, concurrency: 8, timeoutMs: 1000, help: false, version: false },
+      { domains: ['ok.com', 'bad'], json: false, concurrency: 8, delayMs: 500, timeoutMs: 1000, help: false, version: false },
       undefined,
       undefined,
     );

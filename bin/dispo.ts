@@ -73,6 +73,7 @@ async function main(): Promise<number> {
     valid,
     (d) => checkDomain(d, { timeoutMs: args.timeoutMs }),
     args.concurrency,
+    { startDelayMs: args.delayMs },
   );
 
   const useColor = !args.json && process.stdout.isTTY === true;

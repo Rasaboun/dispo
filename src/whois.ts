@@ -4,9 +4,16 @@ import type { Availability } from './types.ts';
 const WHOIS_PORT = 43;
 const IANA_HOST = 'whois.iana.org';
 const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_RETRY_DELAY_MS = 250;
+const MAX_WHOIS_ATTEMPTS = 2;
 
-// In-memory cache for TLD → whois server (IANA referrals are stable per session)
-const tldServerCache = new Map<string, string | null>();
+type WhoisQuery = (host: string, query: string, timeoutMs: number) => Promise<string>;
+type Delay = (ms: number) => Promise<void>;
+
+// In-memory cache for TLD → WHOIS server. Values are promises so concurrent
+// lookups for the same TLD share the same IANA referral request.
+let tldServerCache = new Map<string, Promise<string | null>>();
+let serverQueues = new Map<string, Promise<void>>();
 
 export interface WhoisResult {
   status: Availability;
@@ -15,16 +22,28 @@ export interface WhoisResult {
   error?: string;
 }
 
+export interface WhoisCheckOptions {
+  queryImpl?: WhoisQuery;
+  delayImpl?: Delay;
+  retryDelayMs?: number;
+}
+
 export async function whoisCheck(
   domain: string,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  opts: WhoisCheckOptions = {},
 ): Promise<WhoisResult> {
+  const {
+    queryImpl = whoisQuery,
+    delayImpl = delay,
+    retryDelayMs = DEFAULT_RETRY_DELAY_MS,
+  } = opts;
   const tld = domain.split('.').pop()?.toLowerCase() ?? '';
   if (!tld) return { status: 'unknown', raw: '', server: null, error: 'no TLD' };
 
   let server: string | null;
   try {
-    server = await getWhoisServer(tld, timeoutMs);
+    server = await getWhoisServer(tld, timeoutMs, queryImpl);
   } catch (e) {
     return {
       status: 'unknown',
@@ -38,29 +57,66 @@ export async function whoisCheck(
     return { status: 'unknown', raw: '', server: null, error: 'no WHOIS server for TLD' };
   }
 
-  let raw: string;
   try {
-    raw = await whoisQuery(server, domain, timeoutMs);
+    for (let attempt = 1; attempt <= MAX_WHOIS_ATTEMPTS; attempt++) {
+      const raw = await withWhoisServerQueue(server, () => queryImpl(server, domain, timeoutMs));
+      const status = classify(raw);
+
+      if (status !== 'unknown' || attempt === MAX_WHOIS_ATTEMPTS) {
+        return { status, raw, server };
+      }
+
+      await delayImpl(retryDelayMs);
+    }
   } catch (e) {
     return { status: 'unknown', raw: '', server, error: `WHOIS query failed: ${msgOf(e)}` };
   }
 
-  return { status: classify(raw), raw, server };
+  return { status: 'unknown', raw: '', server };
 }
 
 function msgOf(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export async function getWhoisServer(tld: string, timeoutMs: number): Promise<string | null> {
-  const cached = tldServerCache.get(tld);
-  if (cached !== undefined) return cached;
+export function clearWhoisCaches(): void {
+  tldServerCache = new Map<string, Promise<string | null>>();
+  serverQueues = new Map<string, Promise<void>>();
+}
 
-  const raw = await whoisQuery(IANA_HOST, tld, timeoutMs);
-  const match = raw.match(/^\s*refer:[ \t]*(\S+)/im) || raw.match(/^\s*whois:[ \t]*(\S+)/im);
-  const server = match?.[1]?.toLowerCase() ?? null;
-  tldServerCache.set(tld, server);
-  return server;
+export async function getWhoisServer(
+  tld: string,
+  timeoutMs: number,
+  queryImpl: WhoisQuery = whoisQuery,
+): Promise<string | null> {
+  const cached = tldServerCache.get(tld);
+  if (cached) return cached;
+
+  const lookup = queryImpl(IANA_HOST, tld, timeoutMs).then((raw) => {
+    const match = raw.match(/^\s*refer:[ \t]*(\S+)/im) || raw.match(/^\s*whois:[ \t]*(\S+)/im);
+    return match?.[1]?.toLowerCase() ?? null;
+  });
+  tldServerCache.set(tld, lookup);
+  lookup.catch(() => {
+    if (tldServerCache.get(tld) === lookup) tldServerCache.delete(tld);
+  });
+  return lookup;
+}
+
+async function withWhoisServerQueue<T>(server: string, task: () => Promise<T>): Promise<T> {
+  const previous = serverQueues.get(server) ?? Promise.resolve();
+  const current = previous.catch(() => undefined).then(task);
+  const release = current
+    .then(() => undefined, () => undefined)
+    .finally(() => {
+      if (serverQueues.get(server) === release) serverQueues.delete(server);
+    });
+  serverQueues.set(server, release);
+  return current;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function whoisQuery(host: string, query: string, timeoutMs: number): Promise<string> {
@@ -112,6 +168,7 @@ const AVAILABLE_PATTERNS: readonly RegExp[] = [
   /\bdomain not registered\b/i,
   /\bobject does not exist\b/i,
   /\bis free\b/i,
+  /\bcurrently available for application\b/i,
   /^\s*no\s+match\s+for/im,
 ];
 

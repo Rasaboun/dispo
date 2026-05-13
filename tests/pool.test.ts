@@ -43,4 +43,29 @@ describe('runPool', () => {
     );
     expect(order).toEqual([3, 1, 2]);
   });
+
+  test('paces worker starts when startDelayMs is set', async () => {
+    const waits: number[] = [];
+    const starts: number[] = [];
+    let now = 0;
+
+    await runPool(
+      [1, 2, 3],
+      async (n) => {
+        starts.push(n);
+      },
+      3,
+      {
+        startDelayMs: 250,
+        delayImpl: async (ms) => {
+          waits.push(ms);
+          now += ms;
+        },
+      },
+    );
+
+    expect(waits.map(Math.round)).toEqual([250, 500]);
+    expect(starts).toEqual([1, 2, 3]);
+    expect(Math.round(now)).toBe(750);
+  });
 });

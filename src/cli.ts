@@ -2,6 +2,7 @@ export interface CliArgs {
   domains: string[];
   json: boolean;
   concurrency: number;
+  delayMs: number;
   timeoutMs: number;
   file?: string;
   tlds?: string[];
@@ -22,6 +23,7 @@ Options:
   --tlds, -T <list>          Comma-separated TLDs; positional args become keywords
   --json                     Output JSON instead of a table
   --concurrency, -c <n>      Max parallel lookups (default 8)
+  --delay <ms>               Delay between starting lookups in ms (default 500)
   --timeout, -t <ms>         Per-request timeout in ms (default 10000)
   --version, -v              Show version
   --help, -h                 Show this help
@@ -39,6 +41,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     domains: [],
     json: false,
     concurrency: 8,
+    delayMs: 500,
     timeoutMs: 10_000,
     help: false,
     version: false,
@@ -70,6 +73,10 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case '-c':
         args.concurrency = parsePositiveInt(required(argv, ++i, a), a);
         break;
+      case '--delay':
+      case '--delay-ms':
+        args.delayMs = parseNonNegativeInt(required(argv, ++i, a), a);
+        break;
       case '--timeout':
       case '-t':
         args.timeoutMs = parsePositiveInt(required(argv, ++i, a), a);
@@ -87,6 +94,14 @@ function required(argv: readonly string[], i: number, flag: string): string {
   const v = argv[i];
   if (v === undefined) throw new CliError(`Missing value for ${flag}`);
   return v;
+}
+
+function parseNonNegativeInt(raw: string, flag: string): number {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new CliError(`Expected non-negative integer for ${flag}, got: ${raw}`);
+  }
+  return n;
 }
 
 function parsePositiveInt(raw: string, flag: string): number {
