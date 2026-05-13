@@ -1,10 +1,17 @@
 {
-  "name": "dispo",
+  "name": "@rasaboun/dispo",
   "version": "0.1.0",
-"type": "module",
+  "description": "CLI to check domain availability without a paid API. RDAP first, WHOIS fallback.",
+  "type": "module",
   "bin": {
-    "dispo": "./bin/dispo.ts"
+    "dispo": "./dist/dispo.js"
   },
+  "main": "./dist/dispo.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "bun run bin/dispo.ts",
     "build": "bun build --compile ./bin/dispo.ts --outfile dist/dispo",
@@ -13,9 +20,18 @@
     "build:linux-arm64": "bun build --compile --target bun-linux-arm64 ./bin/dispo.ts --outfile dist/dispo-linux-arm64",
     "build:linux-x64": "bun build --compile --target bun-linux-x64 ./bin/dispo.ts --outfile dist/dispo-linux-x64",
     "build:all": "bun run build:mac-arm64 && bun run build:mac-x64 && bun run build:linux-arm64 && bun run build:linux-x64",
+    "build:npm": "bun build ./bin/dispo.ts --outfile dist/dispo.js --target node",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },
+  "keywords": [
+    "domain",
+    "availability",
+    "rdap",
+    "whois",
+    "cli"
+  ],
+  "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest"
   },
