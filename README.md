@@ -4,6 +4,8 @@
 
 CLI to check domain availability without a paid API. RDAP first, WHOIS fallback when RDAP is unavailable for the TLD.
 
+<img width="923" height="642" alt="image" src="https://github.com/user-attachments/assets/d3c8a272-597c-430f-9086-dcfc480c7e92" />
+
 ## Install
 
 ### One-shot (no install)
