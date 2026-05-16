@@ -41,6 +41,7 @@ dispo google.com openai.io anthropic.fr
 | `--file <path>` | Read domains from a newline-separated file |
 | `--tlds, -T <list>` | Comma-separated TLDs; positional args become keywords |
 | `--concurrency <n>` | Parallel lookups (default 8) |
+| `--delay <ms>` | Delay between starting lookups (default 500). `0` for max speed, higher for conservative bulk checks |
 | `--version, -v` | Show version |
 | `--timeout <ms>` | Per-request timeout (default 10000) |
 
@@ -84,6 +85,7 @@ Positional args become keywords. Each keyword × each TLD = one domain check.
 4. **Prefer `.app` for mobile apps**, `.com` for global brands
 5. **Only surface RDAP `available` results** as confirmed to the user
 6. **Flag WHOIS `available`** as "likely available - verify before purchasing"
+7. **Tune `--delay`** - default 500ms is safe. Use `--delay 0` for small fast sweeps, `--delay 1000` for large bulk runs hitting WHOIS-heavy TLDs
 
 ## Example
 
@@ -92,4 +94,5 @@ User asks: "find an available domain for my food app"
 ```sh
 dispo --tlds com,app,co spots wishspot placepin gemspot
 dispo --tlds app,co viree mapcarte placeboard
+dispo --delay 1000 --tlds com,io,dev,app wishspot placepin
 ```
